@@ -18,9 +18,11 @@ This module allows Bolt plans using `apply()` to be run on a Puppet Enterprise (
 
 Install the `apply_helpers` module in PE. Using PE RBAC, grant the ability to run the `apply_helpers::custom_facts` and `apply_helpers::apply_catalog` tasks to those you intend to use this module.
 
+To use Bolt's `apply_prep` function, also install https://github.com/puppetlabs/puppetlabs-puppet_agent's `master` branch.
+
 ## Usage
 
-Configure Bolt to [work with PE Orchestrator](https://puppet.com/docs/bolt/0.x/bolt_configure_orchestrator.html) and run Bolt commands.
+Configure Bolt to [work with PE Orchestrator](https://puppet.com/docs/bolt/latest/bolt_configure_orchestrator.html) and run Bolt commands.
 
 ## Reference
 
