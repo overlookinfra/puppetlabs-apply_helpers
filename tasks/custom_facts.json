@@ -1,6 +1,7 @@
 {
   "description": "Helper to retrieve custom facts from Bolt (for internal use only)",
   "input_method": "stdin",
+  "private": true,
   "supports_noop": true,
   "parameters": {
     "plugins": {
