@@ -29,6 +29,11 @@ Puppet[:report] = false
 # Make sure to apply the catalog
 Puppet[:noop] = args['_noop'] || false
 
+apply_settings = args['apply_settings'] || {}
+apply_settings.each do |setting, value|
+  Puppet[setting.to_sym] = value
+end
+
 Puppet[:default_file_terminus] = :file_server
 
 exit_code = 0
