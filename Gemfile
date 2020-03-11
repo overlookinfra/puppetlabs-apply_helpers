@@ -1,7 +1,10 @@
+
+# frozen_string_literal: true
+
 source ENV['GEM_SOURCE'] || 'https://rubygems.org'
 
 def location_for(place_or_version, fake_version = nil)
-  if place_or_version =~ %r{\A(git[:@][^#]*)#(.*)}
+  if place_or_version =~ /\A(git[:@][^#]*)#(.*)/
     [fake_version, { git: Regexp.last_match(1), branch: Regexp.last_match(2), require: false }].compact
   elsif place_or_version =~ %r{\Afile:\/\/(.*)}
     ['>= 0', { path: File.expand_path(Regexp.last_match(1)), require: false }]
@@ -19,4 +22,6 @@ group :development do
   gem "puppet-module-posix-default-r#{minor_version}", require: false, platforms: [:ruby]
   gem "puppet-module-posix-dev-r#{minor_version}",     require: false, platforms: [:ruby]
   gem 'puppet', *location_for(ENV['PUPPET_GEM_VERSION'])
+  # Pin puppet blacksmith to avoid failures in forge module push job
+  gem "puppet-blacksmith", "4.1.2"
 end
