@@ -8,6 +8,13 @@ require 'tempfile'
 
 args = JSON.parse($stdin.read)
 
+RESOURCE_INSTANCE = /^([^\[]+)\[([^\]]+)\]$/.freeze
+
+def instance(type_name, resource_name)
+  resource = Puppet::Resource.indirection.find("#{type_name}/#{resource_name}")
+  stringify_resource(resource)
+end
+
 Dir.mktmpdir do |puppet_root|
   # Create temporary directories for all core Puppet settings so we don't clobber
   # existing state or read from puppet.conf. Also create a temporary modulepath.
@@ -32,7 +39,7 @@ Dir.mktmpdir do |puppet_root|
 
   if (conn_info = args['_target'])
     unless (type = conn_info['remote-transport'])
-      puts "Cannot collect facts for a remote target without knowing the remote-transport type."
+      puts "Cannot discover resources for a remote target without knowing it's the remote-transport type."
       exit 1
     end
 
@@ -47,6 +54,7 @@ Dir.mktmpdir do |puppet_root|
 
     # Transport.connect will modify this hash!
     transport_conn_info = conn_info.transform_keys(&:to_sym)
+
     transport = Puppet::ResourceApi::Transport.connect(type, transport_conn_info)
     Puppet::ResourceApi::Transport.inject_device(type, transport)
 
@@ -54,10 +62,14 @@ Dir.mktmpdir do |puppet_root|
     Puppet[:certname] = conn_info['name']
   end
 
-  facts = Puppet::Node::Facts.indirection.find(SecureRandom.uuid, environment: env)
-
-  facts.name = facts.values['clientcert']
-  puts(facts.values.to_json)
+  resources = args['resources'].flat_map do |resource_desc|
+    if (match = RESOURCE_INSTANCE.match(resource_desc))
+      Puppet::Resource.indirection.find("#{match[1]}/#{match[2]}", environment: env)
+    else
+      Puppet::Resource.indirection.search(resource_desc, environment: env)
+    end
+  end
+  puts({ 'resources' => resources }.to_json)
 end
 
 exit 0
