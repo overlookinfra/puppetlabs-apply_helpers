@@ -1,0 +1,22 @@
+{
+  "description": "Helper to retrieve resources from a Target(for internal use only)",
+  "input_method": "stdin",
+  "private": true,
+  "supports_noop": true,
+  "implementations": [
+    { "name": "query_resources.rb" },
+    { "name": "query_resources.rb", "remote": true}
+  ],
+  "parameters": {
+    "plugins": {
+      "description": "Custom facts bundle to use when applying resources",
+      "type": "String",
+      "sensitive": true
+    },
+    "resources": {
+      "description": " A resource type or instance, or an array of such",
+      "type": "Array[Variant[String, Type[Resource]]]"
+    }
+  }
+}
+

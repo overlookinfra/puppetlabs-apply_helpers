@@ -9,7 +9,7 @@ require 'puppet/module_tool/tar'
 require 'securerandom'
 require 'tempfile'
 
-args = JSON.parse(ARGV[0] ? File.read(ARGV[0]) : STDIN.read)
+args = JSON.parse(ARGV[0] ? File.read(ARGV[0]) : $stdin.read)
 
 # Create temporary directories for all core Puppet settings so we don't clobber
 # existing state or read from puppet.conf. Also create a temporary modulepath.
@@ -28,9 +28,7 @@ Puppet[:report] = false
 
 # Make sure to apply the catalog
 Puppet[:noop] = args['_noop'] || false
-
-apply_settings = args['apply_settings'] || {}
-apply_settings.each do |setting, value|
+args['apply_settings'].each do |setting, value|
   Puppet[setting.to_sym] = value
 end
 
@@ -44,13 +42,39 @@ begin
 
   Tempfile.open('plugins.tar.gz') do |plugins|
     File.binwrite(plugins, Base64.decode64(args['plugins']))
-    Puppet::ModuleTool::Tar.instance.unpack(plugins, moduledir, Etc.getlogin || Etc.getpwuid.name)
+    user = Etc.getpwuid.nil? ? Etc.getlogin : Etc.getpwuid.name
+    Puppet::ModuleTool::Tar.instance.unpack(plugins, moduledir, user)
   end
 
   env = Puppet.lookup(:environments).get('production')
   # Needed to ensure features are loaded
   env.each_plugin_directory do |dir|
     $LOAD_PATH << dir unless $LOAD_PATH.include?(dir)
+  end
+
+  if (conn_info = args['_target'])
+    unless (type = conn_info['remote-transport'])
+      puts "Cannot execute a catalog for a remote target without knowing it's the remote-transport type."
+      exit 1
+    end
+
+    begin
+      require 'puppet/resource_api/transport'
+    rescue LoadError
+      msg = "Could not load 'puppet/resource_api/transport', puppet-resource_api "\
+            "gem version 1.8.0 or greater is required on the proxy target"
+      puts msg
+      exit 1
+    end
+
+    # Transport.connect will modify this hash!
+    transport_conn_info = conn_info.transform_keys(&:to_sym)
+
+    transport = Puppet::ResourceApi::Transport.connect(type, transport_conn_info)
+    Puppet::ResourceApi::Transport.inject_device(type, transport)
+
+    Puppet[:facts_terminus] = :network_device
+    Puppet[:certname] = conn_info['name']
   end
 
   # Ensure custom facts are available for provider suitability tests
@@ -62,8 +86,11 @@ begin
              Puppet::Transaction::Report.new('apply')
            end
 
-  Puppet.override(current_environment: env,
-                  loaders: Puppet::Pops::Loaders.new(env)) do
+  overrides = { current_environment: env,
+                loaders: Puppet::Pops::Loaders.new(env) }
+  overrides[:network_device] = true if args['_target']
+
+  Puppet.override(overrides) do
     catalog = Puppet::Resource::Catalog.from_data_hash(args['catalog'])
     catalog.environment = env.name.to_s
     catalog.environment_instance = env
@@ -83,7 +110,7 @@ ensure
   begin
     FileUtils.remove_dir(puppet_root)
   rescue Errno::ENOTEMPTY => e
-    STDERR.puts("Could not cleanup temporary directory: #{e}")
+    $stderr.puts("Could not cleanup temporary directory: #{e}")
   end
 end
 

@@ -3,6 +3,10 @@
   "input_method": "stdin",
   "private": true,
   "supports_noop": true,
+  "implementations": [
+    { "name": "apply_catalog.rb" },
+    { "name": "apply_catalog.rb", "remote": true}
+  ],
   "parameters": {
     "catalog": {
       "description": "Catalog to be applied",
