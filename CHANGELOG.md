@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## Release 0.3.0
+
+**Features**
+- Support for apply/apply_prep on remote `Target`s.
+- Support for `get_resources` plan function.
+
 ## Release 0.2.1
 
 **Bug fix**

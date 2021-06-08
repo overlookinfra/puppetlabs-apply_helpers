@@ -1,6 +1,6 @@
 {
   "name": "puppetlabs-apply_helpers",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "author": "Puppet, Inc.",
   "summary": "Helper libraries for Bolt Apply functionality",
   "license": "Apache-2.0",
