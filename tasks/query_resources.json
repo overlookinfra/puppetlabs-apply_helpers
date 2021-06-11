@@ -15,7 +15,7 @@
     },
     "resources": {
       "description": " A resource type or instance, or an array of such",
-      "type": "Array[Variant[String, Type[Resource]]]"
+      "type": "Array[String]"
     }
   }
 }
